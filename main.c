@@ -55,7 +55,10 @@
 //*****************************************************************************
 
 // Standard includes
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
 
 // Driverlib includes
 #include "hw_types.h"
@@ -73,7 +76,7 @@
 // Common interface includes
 #include "uart_if.h"
 #include "pin_mux_config.h"
-
+#include "i2c_if.h"
 
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1351.h"
@@ -88,7 +91,7 @@
 // MASTER_MODE = 0 : Application in slave mode
 //
 //*****************************************************************************
-#define MASTER_MODE      0
+#define MASTER_MODE      1
 
 #define SPI_IF_BIT_RATE  100000
 #define TR_BUFF_SIZE     100
@@ -465,6 +468,12 @@ void test(){
     //
     //
 }
+
+int gradient(signed char Buff){
+    float divider = 2;              //speed control
+    float gradient = Buff /divider;
+    return (int) gradient;
+}
 //*****************************************************************************
 //
 //! Main function for spi demo application
@@ -531,7 +540,58 @@ void main()
     MAP_SPIEnable(GSPI_BASE);
 
     Adafruit_Init();
-    test();
+    //test();
+    // I2C Init
+        //
+    I2C_IF_Open(I2C_MASTER_MODE_FST);
+
+    unsigned char ucDevAddr;
+    unsigned char ucRegOffsetX;
+    unsigned char ucRegOffsetY;
+    unsigned char aucDataBufX[256];
+    unsigned char aucDataBufY[256];
+    unsigned char uclen;
+    unsigned char ucwrlen;
+    int Px, Py, dx, dy, xbuff, ybuff; //Px,Py = position of x,y  // dx,dy = magnitude of change in x,y // xbuff, ybuff = current position buffer for erasing the ball
+    ucDevAddr = 0x18;
+    ucRegOffsetX = 0x3;     // X Offset
+    ucRegOffsetY = 0x5;     // Y Offset
+    uclen = 1;              // read length
+    ucwrlen = 1;            //write length
+    Px = 64;                // set center position
+    Py = 64;
+    fillScreen(BLACK);      // set background color
+        while(1)
+        {
+            fillCircle(Py,Px,4, RED);
+            I2C_IF_ReadFrom(ucDevAddr,&ucRegOffsetX,ucwrlen,&aucDataBufX[0],uclen);     //read X axis acceleration from I2C
+            I2C_IF_ReadFrom(ucDevAddr,&ucRegOffsetY,ucwrlen,&aucDataBufY[0],uclen);     //read Y axis acceleration from I2C
+            dx = gradient((signed char)aucDataBufX[0]);     //get the signed gradient of x
+            xbuff = Px;                                     // store the old position in the buffer
+            Px = Px + dx;                                   //get  the new position
+            if (Px<=4){                                     //setting boundary for X axis
+                Px = 4;
+            }
+            if (Px>= 123){
+                Px = 123;
+            }
+
+            dy = gradient((signed char)aucDataBufY[0]);     //get the signed gradient of x
+            ybuff = Py;                                     //store the old position in the buffer
+            Py = Py + dy;                                   //get  the new position
+
+            if (Py<=4){                                     //setting the boundary for Y axis
+                Py = 4;
+            }
+            if (Py>= 123){
+                Py = 123;
+            }
+
+            fillCircle(ybuff,xbuff,4, BLACK);               //erase the old ball
+            delay(1);
+
+            }
+          //
 
 
 
