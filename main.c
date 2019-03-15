@@ -90,7 +90,6 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1351.h"
 #include "glcdfont.h"
-#include "i2c_if.h"
 
 //*****************************************************************************
 //
@@ -126,11 +125,11 @@
 
 
 //NEED TO UPDATE THIS FOR IT TO WORK!
-#define DATE                14    /* Current Date */
+#define DATE                1    /* Current Date */
 #define MONTH               3     /* Month 1-12 */
 #define YEAR                2019  /* Current year */
-#define HOUR                18    /* Time - hours */
-#define MINUTE              35    /* Time - minutes */
+#define HOUR                19    /* Time - hours */
+#define MINUTE              05    /* Time - minutes */
 #define SECOND              0     /* Time - seconds */
 
 #define POSTHEADER "POST /things/CC3200_Thing/shadow HTTP/1.1\n\r"
@@ -201,15 +200,13 @@ unsigned long g_ulTimerInts;
 
 // Color definitions
 #define BLACK           0x0000
-#define BLUE            0x001F //b
-#define GREEN           0x07E0 //g
-#define CYAN            0x07FF //c
-#define RED             0xF800 //r
-#define MAGENTA         0xF809 //m
-#define YELLOW          0xFFE0 //y
-#define WHITE           0xFFFF //w
-#define ORANGE          0xFC80 //o
-#define PURPLE          0xA812 //p
+#define BLUE            0x001F
+#define GREEN           0x07E0
+#define CYAN            0x07FF
+#define RED             0xF800
+#define MAGENTA         0xF81F
+#define YELLOW          0xFFE0
+#define WHITE           0xFFFF
 //
 //IR input variables
 volatile unsigned long Input_intcount;
@@ -278,6 +275,425 @@ static int http_get(int);
 //!
 //*****************************************************************************
 
+
+static void GPIOA0IntHandler(void) { // Input handler
+    unsigned long ulStatus;
+
+    ulStatus = MAP_GPIOIntStatus (GPIOA0_BASE, true);
+    MAP_GPIOIntClear(GPIOA0_BASE, ulStatus);        // clear interrupts on GPIOA0
+    value = MAP_GPIOPinRead(GPIOA0_BASE,0x10)   ;
+    //Report("value =  %d\r\n",value);
+    if (value > 0){
+        time1 = count;
+        //Report("time1 =  %d\r\n",time1);
+    }
+    else if (value ==0){
+        time2 = count;
+        tdiff = (time2 - time1);
+        //Report("tdiff =  %d\r\n",tdiff);
+        Input_intflag=1;
+
+    }
+    if (Input_intflag ==1){
+                       Input_intflag = 0;
+
+
+                       if (tdiff <=110){
+                           val =0;
+                           key[i] = val;
+                            i++;
+                       }
+                       else if(tdiff>110){
+                            val=1;
+                            key[i] = val;
+                            i++;
+                       }
+                       if (tdiff >200){
+
+                            i = 0;
+                       }
+
+                       if (i>=32){
+
+                            //Report("key= %c",key);
+                            i = 0;
+                            //for(j=0;j<32;j++){
+                              //     Report("%d",key[j]);
+
+
+                            //}
+                           // Report("\n%d",ONE);
+
+                            time4 =count;
+                            tdiff2 = time4-time3;
+                            //Report("%d\n\r",tdiff2);
+                            if(strcomp(key,ZERO)==0){
+                                //Report("ZERO\n\r");
+                                if (x>=128){
+                                    y= y + 8;
+                                    x= 0;
+                                }
+                                if (y>=64){
+                                    y = 0;
+                                }
+                                drawChar(x, y, 32, BLACK, WHITE, 1);    //space
+                                msgtx[index]= ' ';
+                                index++;
+                                x = x+8;
+                                but = 0;
+                            }
+                            else if(strcomp(key,ONE)==0){
+                                //Report("One\n\r");
+
+                                but = 1;
+                            }
+                            else if(strcomp(key,TWO)==0){
+                                //Report("TWO\n\r");
+                                if((but==2)&&((tdiff2)<= 50000)){
+
+                                    x= x-8;
+                                    index--;
+                                   if(letter==65){
+                                             drawChar(x, y, 66, BLACK, WHITE, 1); //B
+                                             msgtx[index]='b';
+                                             letter = 66;
+                                   }
+                                   else if(letter ==66)    {
+                                             drawChar(x, y, 67, BLACK, WHITE, 1); //C
+                                             msgtx[index]='c';
+                                             letter = 67;
+                                   }
+                                   else if(letter== 67){
+                                             drawChar(x, y, 65, BLACK, WHITE, 1);   //A
+                                             msgtx[index]='a';
+                                             letter = 65;
+                                   }
+                                }
+                                else    {
+                                    if (x>=128){
+                                        y= y + 8;
+                                        x= 0;
+                                    }
+                                    if (y>=64){
+                                        y = 0;
+                                    }
+                                    drawChar(x, y, 65, BLACK, WHITE, 1);
+                                    msgtx[index]='a';
+                                    letter = 65;
+                                }
+
+                                x = x+8;
+                                index++;
+                                but = 2;
+                            }
+                            else if(strcomp(key,THREE)==0){
+                                //Report("THREE\n\r");
+                                if((but==3)&&((tdiff2)<= 50000)){
+
+                                    x= x-8;
+                                    index--;
+                                   if(letter==68){
+                                             drawChar(x, y, 69, BLACK, WHITE, 1); //E
+                                             msgtx[index]='e';
+                                             letter = 69;
+                                   }
+                                   else if(letter ==69)    {
+                                             drawChar(x, y, 70, BLACK, WHITE, 1); //F
+                                             msgtx[index]='f';
+                                             letter = 70;
+                                   }
+                                   else if(letter== 70){
+                                             drawChar(x, y, 68, BLACK, WHITE, 1);   //D
+                                             msgtx[index]='d';
+                                             letter = 68;
+                                   }
+                                }
+                                else    {
+                                    if (x>=128){
+                                        y= y + 8;
+                                        x= 0;
+                                    }
+                                    if (y>=64){
+                                        y = 0;
+                                    }
+                                    drawChar(x, y, 68, BLACK, WHITE, 1);    //D
+                                    msgtx[index]='d';
+                                    letter = 68;
+                                }
+                                index++;
+                                x = x+8;
+                                but = 3;
+                            }
+                            else if(strcomp(key,FOUR)==0){
+                                //Report("FOUR\n\r");
+                                if((but==4)&&((tdiff2)<= 50000)){
+
+                                    x= x-8;
+                                    index--;
+                                   if(letter==71){
+                                             drawChar(x, y, 72, BLACK, WHITE, 1); //H
+                                             msgtx[index]='h';
+                                             letter = 72;
+                                   }
+                                   else if(letter ==72)    {
+                                             drawChar(x, y, 73, BLACK, WHITE, 1); //I
+                                             msgtx[index]='i';
+                                             letter = 73;
+                                   }
+                                   else if(letter== 73){
+                                             drawChar(x, y, 71, BLACK, WHITE, 1);   //G
+                                             msgtx[index]='g';
+                                             letter = 71;
+                                   }
+                                }
+                                else    {
+                                    if (x>=128){
+                                        y= y + 8;
+                                        x= 0;
+                                    }
+                                    if (y>=64){
+                                        y = 0;
+                                    }
+                                    drawChar(x, y, 71, BLACK, WHITE, 1);        //G
+                                    msgtx[index]='g';
+                                    letter = 71;
+                                }
+
+                                x = x+8;
+                                index++;
+                                but = 4;
+                            }
+                            else if(strcomp(key,FIVE)==0){
+                                //Report("FIVE\n\r");
+                                if((but==5)&&((tdiff2)<= 50000)){
+                                    index--;
+                                    x= x-8;
+                                   if(letter==74){
+                                             drawChar(x, y, 75, BLACK, WHITE, 1); //K
+                                             msgtx[index]='k';
+                                             letter = 75;
+                                   }
+                                   else if(letter ==75)    {
+                                             drawChar(x, y, 76, BLACK, WHITE, 1); //L
+                                             msgtx[index]='l';
+                                             letter = 76;
+                                   }
+                                   else if(letter== 76){
+                                             drawChar(x, y, 74, BLACK, WHITE, 1);   //J
+                                             msgtx[index]='j';
+                                             letter =74;
+                                   }
+                                }
+                                else    {
+                                    if (x>=128){
+                                        y= y + 8;
+                                        x= 0;
+                                    }
+                                    if (y>=64){
+                                        y = 0;
+                                    }
+                                    drawChar(x, y, 74, BLACK, WHITE, 1);
+                                    msgtx[index]='j';
+                                    letter = 74;
+                                }
+                                index++;
+                                x = x+8;
+                                but = 5;
+                            }
+                            else if(strcomp(key,SIX)==0){
+                                //Report("SIX\n\r");
+                                if((but==6)&&((tdiff2)<= 50000)){
+                                    index--;
+                                    x= x-8;
+                                   if(letter==77){
+                                             drawChar(x, y, 78, BLACK, WHITE, 1); //N
+                                             msgtx[index]='n';
+                                             letter = 78;
+                                   }
+                                   else if(letter ==78)    {
+                                             drawChar(x, y, 79, BLACK, WHITE, 1); //O
+                                             msgtx[index]='o';
+                                             letter = 79;
+                                   }
+                                   else if(letter== 79){
+                                             drawChar(x, y, 77, BLACK, WHITE, 1);   //M
+                                             msgtx[index]='m';
+                                             letter = 77;
+                                   }
+                                }
+                                else    {
+                                    if (x>=128){
+                                        y= y + 8;
+                                        x= 0;
+                                    }
+                                    if (y>=64){
+                                        y = 0;
+                                    }
+                                    drawChar(x, y, 77, BLACK, WHITE, 1);//M
+                                    msgtx[index]='m';
+                                    letter = 77;
+                                }
+                                index++;
+                                x = x+8;
+                                but = 6;
+                            }
+                            else if(strcomp(key,SEVEN)==0){
+                                //Report("SEVEN\n\r");
+                                if((but==7)&&((tdiff2)<= 50000)){
+                                    index--;
+                                    x= x-8;
+                                   if(letter==80){
+                                             drawChar(x, y, 81, BLACK, WHITE, 1); //Q
+                                             msgtx[index]='q';
+                                             letter = 81;
+                                   }
+                                   else if(letter ==81)    {
+                                             drawChar(x, y, 82, BLACK, WHITE, 1); //R
+                                             msgtx[index]='r';
+                                             letter = 82;
+                                   }
+                                   else if(letter== 82){
+                                             drawChar(x, y, 83, BLACK, WHITE, 1);   //S
+                                             msgtx[index]='s';
+                                             letter = 83;
+                                   }
+                                   else if(letter== 83){
+                                             drawChar(x, y, 80, BLACK, WHITE, 1);   //P
+                                             msgtx[index]='p';
+                                             letter = 80;
+                                   }
+                                }
+                                else    {
+                                    if (x>=128){
+                                        y= y + 8;
+                                        x= 0;
+                                    }
+                                    if (y>=64){
+                                        y = 0;
+                                    }
+                                    drawChar(x, y, 80, BLACK, WHITE, 1);//P
+                                    msgtx[index]='p';
+                                    letter = 80;
+                                }
+                                index++;
+                                x = x+8;
+                                but = 7;
+                            }
+                            else if(strcomp(key,EIGHT)==0){
+                                //Report("EIGHT\n\r");
+                                if((but==8)&&((tdiff2)<= 50000)){
+                                    index--;
+                                    x= x-8;
+                                   if(letter==84){
+                                             drawChar(x, y, 85, BLACK, WHITE, 1); //U
+                                             msgtx[index]='u';
+                                             letter = 85;
+                                   }
+                                   else if(letter ==85)    {
+                                             drawChar(x, y, 86, BLACK, WHITE, 1); //V
+                                             msgtx[index]='v';
+                                             letter = 86;
+                                   }
+                                   else if(letter== 86){
+                                             drawChar(x, y, 84, BLACK, WHITE, 1);   //T
+                                             msgtx[index]='t';
+                                             letter = 84;
+                                   }
+
+                                }
+                                else    {
+                                    if (x>=128){
+                                        y= y + 8;
+                                        x= 0;
+                                    }
+                                    if (y>=64){
+                                        y = 0;
+                                    }
+                                    drawChar(x, y, 84, BLACK, WHITE, 1);//T
+                                    msgtx[index]='t';
+                                    letter = 84;
+                                }
+                                index++;
+                                x = x+8;
+                                but = 8;
+                            }
+                            else if(strcomp(key,NINE)==0){
+                                //Report("NINE\n\r");
+                                if((but==9)&&((tdiff2)<= 50000)){
+                                    index--;
+                                    x= x-8;
+                                   if(letter==87){
+                                             drawChar(x, y, 88, BLACK, WHITE, 1); //X
+                                             msgtx[index]='x';
+                                             letter = 88;
+                                   }
+                                   else if(letter ==88)    {
+                                             drawChar(x, y, 89, BLACK, WHITE, 1); //Y
+                                             msgtx[index]='y';
+                                             letter = 89;
+                                   }
+                                   else if(letter== 89){
+                                             drawChar(x, y,90, BLACK, WHITE, 1);   //Z
+                                             msgtx[index]='z';
+                                             letter = 90;
+                                   }
+                                   else if(letter== 90){
+                                             drawChar(x, y, 87, BLACK, WHITE, 1);   //W
+                                             msgtx[index]='w';
+                                             letter = 87;
+                                   }
+                                }
+                                else    {
+                                    if (x>=128){
+                                        y= y + 8;
+                                        x= 0;
+                                    }
+                                    if (y>=64){
+                                        y = 0;
+                                    }
+                                    drawChar(x, y, 87, BLACK, WHITE, 1);    //W
+                                    msgtx[index]='w';
+                                    letter = 87;
+                                }
+                                x = x+8;
+                                index++;
+                                but = 9;
+                            }
+                            else if(strcomp(key,MUTE)==0){
+                                //Report("MUTE\n\r");
+                                x = x-8;
+                                index--;
+                                if (index<0){
+                                    index=0;
+                                }
+                                drawChar(x, y, 32, BLACK, WHITE, 1);    //space
+                                msgtx[index]=' ';
+                                but = 10;
+                            }
+                            else if(strcomp(key,LAST)==0){  // send
+                                //Report("LAST\n\r");
+
+
+                                msg[0] = msgtx[0];
+
+                                msg[8] = '\0';
+
+                                flag = 1;
+                                //Enables UART interrupts
+                                index=0;
+
+                                memset(msgtx, ' ', 8);
+                                but = 11;
+                            }
+                            //Report("msg=%c",msgtx[index-1]);
+                            //Report("index=%d",index);
+                            time3 = time4;
+                       }
+
+
+    }
+}
+
 void
 TimerBaseIntHandler(void)
 {
@@ -287,7 +703,7 @@ TimerBaseIntHandler(void)
     Timer_IF_InterruptClear(g_ulBase);
 
     count ++;
-    flag =1;
+
 }
 
 
@@ -1004,6 +1420,8 @@ int connectToAccessPoint() {
 void main() {
     unsigned long ulStatus;
     long lRetVal = -1;
+    long pin = 0;
+    long pin0 = 0;
     //
     // Initialize board configuration
     //
@@ -1055,20 +1473,20 @@ void main() {
 
           // Register the interrupt handlers
           //
-         // MAP_GPIOIntRegister(GPIOA0_BASE, GPIOA0IntHandler);
+          MAP_GPIOIntRegister(GPIOA0_BASE, GPIOA0IntHandler);
           //
           // Configure rising edge interrupts on SW2 and SW3
           //
-          //MAP_GPIOIntTypeSet(GPIOA0_BASE, 0x10, GPIO_BOTH_EDGES);
+          MAP_GPIOIntTypeSet(GPIOA0_BASE, 0x10, GPIO_BOTH_EDGES);
 
-          //ulStatus = MAP_GPIOIntStatus (GPIOA0_BASE, false);
-          //MAP_GPIOIntClear(GPIOA0_BASE, ulStatus);
+          ulStatus = MAP_GPIOIntStatus (GPIOA0_BASE, false);
+          MAP_GPIOIntClear(GPIOA0_BASE, ulStatus);
           // clear global variables
           Input_intcount=0;
-          Input_intflag=1;
+          Input_intflag=0;
           i =0;
           // Enable SW2 and SW3 interrupts
-          //MAP_GPIOIntEnable(GPIOA0_BASE, 0X10);
+          MAP_GPIOIntEnable(GPIOA0_BASE, 0X10);
           //
              // Enable Timer
              //
@@ -1088,7 +1506,7 @@ void main() {
              //
              // Turn on the timers feeding values in mSec
              //
-             MAP_TimerLoadSet(g_ulBase,TIMER_A,400000000);
+             MAP_TimerLoadSet(g_ulBase,TIMER_A,800);
                  //
                  // Enable the GPT
                  //
@@ -1096,8 +1514,21 @@ void main() {
 
                     //http_get(lRetVal);
 
-
           while (1) {
+              pin =  GPIOPinRead(GPIOA1_BASE, 0x1);
+              Report("pin=%d \r\n",pin);
+              if (pin){
+                  msg[1] = '0';
+              }
+              else {
+                  msg[1] = '1';
+              }
+
+              if (pin!=pin0){
+                  flag = 1;
+                  pin0 = pin;
+              }
+
               if(flag ==1){
                   lRetVal = connectToAccessPoint();
                   lRetVal = set_time();
@@ -1110,11 +1541,12 @@ void main() {
                       ERR_PRINT(lRetVal);
                   }
                       //Connect to the website with TLS encryption
-                  http_get(lRetVal);
+                  http_post(lRetVal);
                   sl_Stop(SL_STOP_TIMEOUT);
+
+
                       flag=0;
               }
-
           }
 }
 //*****************************************************************************
@@ -1194,12 +1626,14 @@ static int http_post(int iTLSSockID){
         UART_PRINT(acRecvbuff);
         UART_PRINT("\n\r\n\r");
     }
-
+    drawChar(0, 4, 's', BLACK, WHITE, 1);
+    drawChar(4, 4, 'e', BLACK, WHITE, 1);
+    drawChar(8, 4, 'n', BLACK, WHITE, 1);
+    drawChar(12, 4, 't', BLACK, WHITE, 1);
     return 0;
 }
 
 static int http_get(int iTLSSockID){
-    UART_PRINT("\n\r in get function \n\r");
     char acSendBuff[512];
     char acRecvbuff[1460];
 
@@ -1215,7 +1649,7 @@ static int http_get(int iTLSSockID){
     pcBufHeaders += strlen(CHEADER);
     strcpy(pcBufHeaders, "\r\n\r\n");
 
-    int s;
+
     int testDataLength = strlen(pcBufHeaders);
 
     UART_PRINT(acSendBuff);
@@ -1224,9 +1658,6 @@ static int http_get(int iTLSSockID){
     //
     // Get the packet from the server */
     //
-
-    UART_PRINT(lRetVal);
-
     lRetVal = sl_Send(iTLSSockID, acSendBuff, strlen(acSendBuff), 0);
         if(lRetVal < 0) {
             UART_PRINT("POST failed. Error Number: %i\n\r",lRetVal);
@@ -1245,37 +1676,9 @@ static int http_get(int iTLSSockID){
             acRecvbuff[lRetVal+1] = '\0';
             UART_PRINT(acRecvbuff);
             UART_PRINT("\n\r\n\r");
-
-                Report("/n****/n");
-                Report("%c",acRecvbuff[217]);
-                Report("%c",acRecvbuff[218]);
-                Report("/n****/n");
-
-                if(acRecvbuff[218] == '0') {
-                    fillScreen(BLACK);
-                } else if (acRecvbuff[218] == '1') {
-                    if(acRecvbuff[217] == 'r') {
-                        fillScreen(RED);
-                    } else if (acRecvbuff[217] == 'g') {
-                        fillScreen(GREEN);
-                    } else if (acRecvbuff[217] == 'b') {
-                        fillScreen(BLUE);
-                    } else if (acRecvbuff[217] == 'y') {
-                        fillScreen(YELLOW);
-                    } else if (acRecvbuff[217] == 'm') {
-                        fillScreen(MAGENTA);
-                    } else if (acRecvbuff[217] == 'c') {
-                        fillScreen(CYAN);
-                    } else if (acRecvbuff[217] == 'o') {
-                        fillScreen(ORANGE);
-                    } else if (acRecvbuff[217] == 'p') {
-                        fillScreen(PURPLE);
-                    }
-                }
-                //if 218 = 1 --> OLED = black
-                //else
-                //if 217 == etc.
         }
+
+
 
     return 0;
 }
